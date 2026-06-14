@@ -41,6 +41,10 @@ const sampleFor = (name: string) => VAR_SAMPLES[name] ?? humanize(name);
 const buildSamples = (vars: string[]) =>
   Object.fromEntries(vars.map((v) => [v, sampleFor(v)]));
 
+// Demo test contact for one-click prefill.
+const DEMO_NAME = "Asha Rao";
+const DEMO_PHONE = "+919492077799";
+
 export default function Home() {
   const [agents, setAgents] = useState<AgentSummary[]>([]);
   const [agentId, setAgentId] = useState<string>("");
@@ -190,7 +194,11 @@ export default function Home() {
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
                     type="button"
-                    onClick={() => setVals(buildSamples(variables))}
+                    onClick={() => {
+                      setName(DEMO_NAME);
+                      setPhone(DEMO_PHONE);
+                      setVals(buildSamples(variables));
+                    }}
                     style={{ padding: "5px 12px", fontSize: 12 }}
                   >
                     Auto-fill
