@@ -108,20 +108,6 @@ export default function ConsolePage() {
     [agents, agentId],
   );
 
-  // Numbers with a completed call are already OTP-verified on Ringg — offer them
-  // as one-tap picks so a fresh (unverified) number never hits the OTP wall.
-  const verifiedNumbers = useMemo(() => {
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const c of calls) {
-      if (c.status === "completed" && c.to_number && !seen.has(c.to_number)) {
-        seen.add(c.to_number);
-        out.push(c.to_number);
-      }
-    }
-    return out.slice(0, 6);
-  }, [calls]);
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -203,24 +189,6 @@ export default function ConsolePage() {
               />
             </div>
           </div>
-
-          {verifiedNumbers.length > 0 && (
-            <div>
-              <label>Verified numbers · tap to use (avoids OTP)</label>
-              <div className="chips">
-                {verifiedNumbers.map((num) => (
-                  <button
-                    key={num}
-                    type="button"
-                    className="chip"
-                    onClick={() => setPhone(num)}
-                  >
-                    {maskPhone(num)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {variables.length > 0 && (
             <div className="grid" style={{ gap: 14 }}>
