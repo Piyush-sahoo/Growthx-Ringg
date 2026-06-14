@@ -7,9 +7,10 @@ the outcome edge, fire any tool nodes, and stop at a terminal or the next call n
 
 from __future__ import annotations
 
-from . import llm, tools
+from . import llm, memory, ringg, tools
 from .graph import NodeType, WorkflowGraph, next_target
-from .models import CallRecord
+from .models import CallRecord, CallStatus
+from .store import store
 from .templates import REPORTZEN_BRANCHES, REPORTZEN_GRAPH
 
 
@@ -108,5 +109,59 @@ async def run_branch(record: CallRecord) -> list[dict]:
             record.current_node_id = tnode.id
             target_id = None
 
+    # Memory write-back (S5): update the contact's history from this call.
+    contact = await _touch_contact(record)
+    memory.record_outcome(contact, record)
+    await store.save_contact(contact)
+
+    # On a granted extension, schedule the memory-carrying follow-up call.
+    analysis = record.analysis or {}
+    if analysis.get("extension_granted") and not record.is_followup:
+        followup_id = await _schedule_followup(record, contact)
+        actions.append({"tool": "none", "status": "followup_scheduled", "call_id": followup_id})
+
     record.actions = (record.actions or []) + actions
     return actions
+
+
+async def _touch_contact(record: CallRecord):
+    """Load (or create) the contact and refresh `now` with this call's trial fields."""
+    cav = record.custom_args_values or {}
+    contact = await store.get_contact(record.phone_number)
+    if contact is None:
+        contact = memory.new_contact(
+            record.phone_number, record.customer_name, memory.now_from(cav)
+        )
+    else:
+        contact.now.update(memory.now_from(cav))
+    return contact
+
+
+async def _schedule_followup(record: CallRecord, contact) -> str:
+    """Create + place a follow-up call (day-before-deadline) carrying prior memory."""
+    variables = memory.compile_memory(contact, days_left_override="1")
+    followup = CallRecord(
+        customer_name=record.customer_name,
+        phone_number=record.phone_number,
+        custom_args_values=variables,
+        is_followup=True,
+        parent_call_id=record.id,
+        workflow_id=record.workflow_id or REPORTZEN_GRAPH.id,
+        current_node_id=REPORTZEN_GRAPH.entry,
+    )
+    await store.add(followup)
+    try:
+        res = await ringg.ringg_client.place_outbound_call(
+            name=record.customer_name,
+            phone_number=record.phone_number,
+            custom_args_values=variables,
+        )
+        followup.ringg_call_id = (
+            res.get("call_id") or res.get("id") or (res.get("data") or {}).get("call_id")
+        )
+        followup.status = CallStatus.in_progress
+    except ringg.RinggError as exc:
+        followup.status = CallStatus.queued
+        followup.analysis = {"schedule_error": str(exc)}
+    await store.update(followup)
+    return followup.id

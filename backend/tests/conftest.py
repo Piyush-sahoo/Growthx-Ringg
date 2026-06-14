@@ -12,15 +12,15 @@ def _reset_store():
         store._calls.clear()
         store._seen.clear()
         store._workflows.clear()
+        store._contacts.clear()
     yield
 
 
 @pytest.fixture(autouse=True)
-def _fake_tools(request, monkeypatch):
-    """Stub the real tool senders for behavioral tests.
+def _fake_externals(request, monkeypatch):
+    """Stub real outbound senders/dialers for behavioral tests.
 
-    Integration tests (marked `integration`) keep the real implementations so they
-    actually hit Resend/Twilio.
+    Integration tests (marked `integration`) keep the real implementations.
     """
     if request.node.get_closest_marker("integration"):
         yield
@@ -32,6 +32,11 @@ def _fake_tools(request, monkeypatch):
     async def _fake_whatsapp(**kwargs):
         return {"sid": "fake-wa-sid"}
 
+    async def _fake_call(**kwargs):
+        return {"call_id": "fake-followup-call-id"}
+
     monkeypatch.setattr("app.tools.send_email", _fake_email)
     monkeypatch.setattr("app.tools.send_whatsapp", _fake_whatsapp)
+    # Used by follow-up scheduling so behavioral tests never place a real call.
+    monkeypatch.setattr("app.ringg.ringg_client.place_outbound_call", _fake_call)
     yield

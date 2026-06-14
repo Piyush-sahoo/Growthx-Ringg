@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, HTTPException
 
+from .. import memory
 from ..models import CallRecord, CallStatus, OutboundCallRequest
 from ..ringg import RinggError, ringg_client
 from ..store import store
@@ -26,11 +27,17 @@ async def get_call(call_id: str) -> CallRecord:
 @router.post("", response_model=CallRecord, status_code=201)
 async def create_call(payload: OutboundCallRequest) -> CallRecord:
     """Trigger a single outbound Ringg call and track it."""
-    # Always expose the customer name to the prompt (Ringg uses callee_name).
+    # Load/create the contact, refresh its `now` from the request, and persist.
+    contact = await store.get_contact(payload.phone_number) or memory.new_contact(
+        payload.phone_number, payload.customer_name, memory.now_from(payload.custom_args_values)
+    )
+    contact.now.update(memory.now_from(payload.custom_args_values))
+    await store.save_contact(contact)
+
+    # Compile three-layer memory into custom_args_values; explicit request values win.
     variables = {
         "customer_name": payload.customer_name,
-        "callee_name": payload.customer_name,
-        "phone_number": payload.phone_number,
+        **memory.compile_memory(contact),
         **payload.custom_args_values,
     }
 

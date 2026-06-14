@@ -11,7 +11,7 @@ from __future__ import annotations
 from asyncio import Lock
 
 from .config import get_settings
-from .models import CallRecord
+from .models import CallRecord, ContextObject
 
 
 class InMemoryRepository:
@@ -21,6 +21,7 @@ class InMemoryRepository:
         self._calls: dict[str, CallRecord] = {}
         self._seen: set[str] = set()
         self._workflows: dict[str, dict] = {}
+        self._contacts: dict[str, ContextObject] = {}
         self._lock = Lock()
 
     async def connect(self) -> None:  # no-op
@@ -36,6 +37,14 @@ class InMemoryRepository:
 
     async def list_workflows(self) -> list[dict]:
         return list(self._workflows.values())
+
+    async def get_contact(self, phone_number: str) -> ContextObject | None:
+        return self._contacts.get(phone_number)
+
+    async def save_contact(self, contact: ContextObject) -> ContextObject:
+        async with self._lock:
+            self._contacts[contact.phone_number] = contact
+        return contact
 
     async def close(self) -> None:  # no-op
         return None
@@ -82,6 +91,7 @@ class MongoRepository:
         self._calls = None
         self._events = None
         self._workflows = None
+        self._contacts = None
 
     async def connect(self) -> None:
         from motor.motor_asyncio import AsyncIOMotorClient
@@ -91,6 +101,7 @@ class MongoRepository:
         self._calls = db["calls"]
         self._events = db["events"]
         self._workflows = db["workflows"]
+        self._contacts = db["contacts"]
         # Unique index gives us atomic dedupe via duplicate-key errors.
         await self._events.create_index("key", unique=True)
         await self._calls.create_index("ringg_call_id")
@@ -112,6 +123,15 @@ class MongoRepository:
             d.pop("_id", None)
             out.append(d)
         return out
+
+    async def get_contact(self, phone_number: str) -> ContextObject | None:
+        doc = await self._contacts.find_one({"_id": phone_number})
+        return ContextObject(**doc) if doc else None
+
+    async def save_contact(self, contact: ContextObject) -> ContextObject:
+        doc = {**contact.model_dump(mode="json"), "_id": contact.phone_number}
+        await self._contacts.replace_one({"_id": contact.phone_number}, doc, upsert=True)
+        return contact
 
     async def close(self) -> None:
         if self._client is not None:

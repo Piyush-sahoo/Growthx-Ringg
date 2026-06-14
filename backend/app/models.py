@@ -71,6 +71,26 @@ class CallRecord(BaseModel):
     # Graph execution state (S3+).
     workflow_id: str | None = None
     current_node_id: str | None = None
+    # Memory / follow-up linkage (S5).
+    is_followup: bool = False
+    parent_call_id: str | None = None
+    created_at: datetime = Field(default_factory=_now)
+    updated_at: datetime = Field(default_factory=_now)
+
+
+class ContextObject(BaseModel):
+    """Per-contact three-layer memory (Memory & Context rubric, L5).
+
+    - ``now``    — current run state (trial fields, current call's outcome).
+    - ``before`` — history of prior calls (outcome, wall, promise, extension).
+    - ``rules``  — workflow policy (pricing/sizing, extension policy, never-rules).
+    """
+
+    phone_number: str
+    customer_name: str = "unknown"
+    now: dict[str, Any] = Field(default_factory=dict)
+    before: list[dict[str, Any]] = Field(default_factory=list)
+    rules: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 

@@ -72,7 +72,10 @@ async def ringg_webhook(
             record.transcript_turns = event.transcript
     if event.recording_url is not None:
         record.recording_url = event.recording_url
-    if isinstance(event.analysis, dict):
+    # The custom (client) analysis carries the structured fields we branch + remember on.
+    if isinstance(event.client_analysis, dict):
+        record.analysis = event.client_analysis
+    elif isinstance(event.analysis, dict):
         record.analysis = event.analysis
     outcome = _extract_outcome(event)
     if outcome:
