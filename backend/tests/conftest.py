@@ -35,8 +35,12 @@ def _fake_externals(request, monkeypatch):
     async def _fake_call(**kwargs):
         return {"call_id": "fake-followup-call-id"}
 
+    async def _fake_video(**kwargs):
+        return {"id": "fake-video"}
+
     monkeypatch.setattr("app.tools.send_email", _fake_email)
     monkeypatch.setattr("app.tools.send_whatsapp", _fake_whatsapp)
+    monkeypatch.setattr("app.tools.send_recap_video", _fake_video)
     # Used by follow-up scheduling so behavioral tests never place a real call.
     monkeypatch.setattr("app.ringg.ringg_client.place_outbound_call", _fake_call)
     yield

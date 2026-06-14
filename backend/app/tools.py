@@ -25,6 +25,11 @@ def whatsapp_configured() -> bool:
     return bool(s.twilio_account_sid and s.twilio_auth_token and s.twilio_whatsapp_from)
 
 
+def video_configured() -> bool:
+    """The recap-video tool delivers via Resend, so it shares email config."""
+    return bool(get_settings().resend_api_key)
+
+
 async def send_email(*, to: str, subject: str, html: str) -> dict:
     """Send an email via Resend. Returns the Resend response (includes ``id``)."""
     s = get_settings()
@@ -56,3 +61,15 @@ async def send_whatsapp(*, to: str, body: str) -> dict:
     if r.status_code >= 400:
         raise ToolError(f"Twilio {r.status_code}: {r.text}")
     return r.json()
+
+
+async def send_recap_video(*, to: str, html: str) -> dict:
+    """Email a personalized HyperFrames recap via Resend (HTML embedded inline).
+
+    Returns the Resend response (includes ``id``). Garnish / off the live path.
+    """
+    return await send_email(
+        to=to,
+        subject="Your ReportZen recap",
+        html=html,
+    )

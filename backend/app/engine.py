@@ -7,7 +7,7 @@ the outcome edge, fire any tool nodes, and stop at a terminal or the next call n
 
 from __future__ import annotations
 
-from . import llm, memory, ringg, tools
+from . import llm, memory, render, ringg, tools
 from .graph import NodeType, WorkflowGraph, next_target
 from .models import CallRecord, CallStatus
 from .store import store
@@ -61,6 +61,22 @@ async def _run_tool_node(record: CallRecord, node) -> list[dict]:
                 actions.append({"tool": "email", "status": "error", "error": str(exc)})
         else:
             actions.append({"tool": "email", "status": "skipped", "reason": "not_configured"})
+
+    if kind == "video":
+        # HyperFrames personalized recap, delivered by email. Garnish / off the
+        # live critical path — just another tool node.
+        if tools.video_configured():
+            to = cav.get("email") or "delivered@resend.dev"
+            html_recap = render.build_recap_html(cav)
+            try:
+                res = await tools.send_recap_video(to=to, html=html_recap)
+                actions.append(
+                    {"tool": "video", "status": "sent", "to": to, "id": res.get("id")}
+                )
+            except tools.ToolError as exc:
+                actions.append({"tool": "video", "status": "error", "error": str(exc)})
+        else:
+            actions.append({"tool": "video", "status": "skipped", "reason": "not_configured"})
 
     if kind in ("checkout_link", "whatsapp"):
         if tools.whatsapp_configured():

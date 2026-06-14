@@ -3,6 +3,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from .. import llm
 from ..deploy import deploy_workflow
 from ..graph import WorkflowGraph, validate_graph
 from ..ringg import RinggError, ringg_client
@@ -15,6 +16,11 @@ router = APIRouter(prefix="/workflows", tags=["workflows"])
 class DeployRequest(BaseModel):
     template_id: str | None = None
     graph: WorkflowGraph | None = None
+
+
+class GenerateRequest(BaseModel):
+    prompt: str
+    base_template_id: str | None = None
 
 
 @router.get("/templates")
@@ -60,6 +66,39 @@ async def deploy(req: DeployRequest) -> dict:
     summary = await deploy_workflow(graph)
     await store.save_workflow(graph.model_dump(mode="json"))
     return {"deployment": summary, "graph": graph.model_dump(mode="json")}
+
+
+@router.post("/generate")
+def generate(req: GenerateRequest) -> dict:
+    """Generate a workflow graph from a natural-language prompt (Gemini, S9).
+
+    Optionally seeds from a base template. Falls back to the base (or a minimal
+    valid graph) when generation fails; raises 422 if nothing valid can be made.
+    """
+    base = None
+    if req.base_template_id is not None:
+        tpl = get_template(req.base_template_id)
+        if tpl is None:
+            raise HTTPException(status_code=404, detail="Base template not found")
+        base = tpl.model_dump(mode="json")
+
+    raw = llm.generate_workflow(req.prompt, base)
+
+    def _validated(data: dict) -> WorkflowGraph | None:
+        try:
+            g = WorkflowGraph.model_validate(data)
+            validate_graph(g)
+            return g
+        except ValueError:
+            return None
+
+    graph = _validated(raw)
+    if graph is None and base is not None:
+        graph = _validated(base)
+    if graph is None:
+        raise HTTPException(status_code=422, detail="Generated graph failed validation")
+
+    return {"graph": graph.model_dump(mode="json")}
 
 
 @router.get("/{workflow_id}")
