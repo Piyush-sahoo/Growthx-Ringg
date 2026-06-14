@@ -47,6 +47,14 @@ class Settings(BaseSettings):
     twilio_auth_token: str = ""
     twilio_whatsapp_from: str = ""  # e.g. "whatsapp:+14155238886"
 
+    # Telegram — Bot API channel (checkout link / forwardable summary to the user).
+    # Token from @BotFather; chat id is the user's or a group's chat id.
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
+
+    # Slack — incoming webhook (internal escalation: stuck walls, urgent flags).
+    slack_webhook_url: str = ""
+
     # CORS — comma-separated list of allowed origins for the frontend.
     cors_origins: str = "http://localhost:3000"
 

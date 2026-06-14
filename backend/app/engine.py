@@ -11,7 +11,7 @@ from . import llm, memory, render, ringg, tools
 from .graph import NodeType, WorkflowGraph, next_target
 from .models import CallRecord, CallStatus
 from .store import store
-from .templates import REPORTZEN_BRANCHES, REPORTZEN_GRAPH
+from .templates import REPORTZEN_BRANCHES, REPORTZEN_GRAPH, REPORTZEN_RECALL_NODE
 
 
 def _upgrade_link(record: CallRecord) -> str:
@@ -163,7 +163,7 @@ async def _schedule_followup(record: CallRecord, contact) -> str:
         is_followup=True,
         parent_call_id=record.id,
         workflow_id=record.workflow_id or REPORTZEN_GRAPH.id,
-        current_node_id=REPORTZEN_GRAPH.entry,
+        current_node_id=REPORTZEN_RECALL_NODE,
     )
     await store.add(followup)
     try:

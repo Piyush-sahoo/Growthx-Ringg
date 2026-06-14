@@ -33,20 +33,23 @@ def _fake_ringg(monkeypatch):
 
 def test_deploy_creates_one_agent_per_call_node(monkeypatch):
     counters = _fake_ringg(monkeypatch)
+    tpl = client.get("/workflows/templates/reportzen-trial-to-paid").json()
+    n_calls = sum(1 for n in tpl["nodes"] if n["type"] == "call")
+    assert n_calls >= 4  # check-in, stakeholder, recall, win-back
+
     resp = client.post("/workflows/deploy", json={"template_id": "reportzen-trial-to-paid"})
     assert resp.status_code == 200
 
     agents = resp.json()["deployment"]["agents"]
-    assert len(agents) == 1  # ReportZen has one call node
-    assert agents[0]["created"] is True
-    assert agents[0]["agent_id"] == "agent-1"
-    assert agents[0]["subscribed"] == "subscribed"
-    assert counters == {"create": 1, "subscribe": 1}
+    assert len(agents) == n_calls
+    assert all(a["created"] is True for a in agents)
+    assert all(a["subscribed"] == "subscribed" for a in agents)
+    assert counters == {"create": n_calls, "subscribe": n_calls}
 
-    # Persisted graph carries the agent_id on the call node.
+    # Persisted graph carries an agent_id on every call node.
     g = client.get("/workflows/reportzen-trial-to-paid").json()
-    call_node = next(n for n in g["nodes"] if n["type"] == "call")
-    assert call_node["agent_id"] == "agent-1"
+    call_nodes = [n for n in g["nodes"] if n["type"] == "call"]
+    assert all(n["agent_id"] for n in call_nodes)
 
 
 def test_redeploy_is_idempotent_and_resubscribes(monkeypatch):
@@ -58,10 +61,10 @@ def test_redeploy_is_idempotent_and_resubscribes(monkeypatch):
 
     resp = client.post("/workflows/deploy", json={"graph": g})
     agents = resp.json()["deployment"]["agents"]
-    assert agents[0]["agent_id"] == "existing-1"
-    assert agents[0]["created"] is False
+    assert all(a["agent_id"] == "existing-1" for a in agents)
+    assert all(a["created"] is False for a in agents)
     assert counters["create"] == 0  # did NOT create again
-    assert counters["subscribe"] == 1  # but did re-subscribe
+    assert counters["subscribe"] == len(agents)  # but did re-subscribe each
 
 
 def test_deploy_rejects_invalid_graph():

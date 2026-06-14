@@ -53,6 +53,7 @@ async def create_call(payload: OutboundCallRequest) -> CallRecord:
             name=payload.customer_name,
             phone_number=payload.phone_number,
             custom_args_values=variables,
+            assistant_id=payload.agent_id,
         )
         record.ringg_call_id = (
             result.get("call_id")

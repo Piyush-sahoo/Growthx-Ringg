@@ -45,6 +45,8 @@ class OutboundCallRequest(BaseModel):
 
     customer_name: str = Field(..., examples=["Asha Rao"])
     phone_number: str = Field(..., examples=["+919812345678"])
+    # Which agent to call; falls back to RINGG_ASSISTANT_ID when omitted.
+    agent_id: str | None = None
     # Per-row variables that map to @{{variable}} placeholders in the Ringg prompt.
     custom_args_values: dict[str, Any] = Field(default_factory=dict)
 

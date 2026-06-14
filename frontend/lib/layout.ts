@@ -6,13 +6,14 @@ export interface Positioned {
   y: number;
 }
 
-const X_GAP = 240;
-const Y_GAP = 150;
+const X_GAP = 320;
+const Y_GAP = 124;
 
 /**
- * Simple layered (top-down) layout. Assigns each node a depth via BFS from the
- * entry node, then spreads nodes horizontally within each depth level. Nodes
- * unreachable from entry are appended on their own row below.
+ * Layered left-to-right layout: BFS depth from the entry node maps to columns
+ * (x), and siblings within a column stack vertically (y). This keeps wide
+ * branching (e.g. a 6-way call) readable as a tidy vertical column per level.
+ * Nodes unreachable from entry are appended in a trailing column.
  */
 export function layoutGraph(graph: WorkflowGraph): Record<string, Positioned> {
   const adj = new Map<string, string[]>();
@@ -60,8 +61,8 @@ export function layoutGraph(graph: WorkflowGraph): Record<string, Positioned> {
   for (const [d, ids] of Array.from(levels.entries()).sort((a, b) => a[0] - b[0])) {
     const total = ids.length;
     ids.forEach((id, i) => {
-      const x = (i - (total - 1) / 2) * X_GAP;
-      result[id] = { id, x, y: d * Y_GAP };
+      const y = (i - (total - 1) / 2) * Y_GAP;
+      result[id] = { id, x: d * X_GAP, y };
     });
   }
   return result;

@@ -88,6 +88,82 @@ class RinggClient:
         info = (await self.get_workspace()).get("workspace_info", {})
         return float(info.get("total_available_credits") or info.get("credits") or 0)
 
+    async def call_history(
+        self, *, page: int = 1, page_size: int = 25, agent_id: str | None = None
+    ) -> dict:
+        """Fetch real call history from Ringg, normalized for the UI."""
+        from .models import transcript_to_text
+
+        url = f"{self._settings.ringg_base_url.rstrip('/')}/calling/history"
+        params = {"page": page, "page_size": page_size}
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(url, headers=self._headers, params=params)
+        if resp.status_code >= 400:
+            raise RinggError(f"Ringg history {resp.status_code}: {resp.text}")
+        data = resp.json()
+        calls = data.get("calls", []) if isinstance(data, dict) else []
+        out = []
+        for c in calls:
+            agent = c.get("agent") or {}
+            if agent_id and agent.get("id") != agent_id:
+                continue
+            out.append(
+                {
+                    "id": c.get("id"),
+                    "name": c.get("name"),
+                    "to_number": c.get("to_number"),
+                    "status": c.get("status"),
+                    "agent_id": agent.get("id"),
+                    "agent_name": agent.get("agent_name"),
+                    "duration": c.get("call_duration"),
+                    "cost": c.get("call_cost"),
+                    "currency": c.get("currency"),
+                    "created_at": c.get("created_at"),
+                    "transcript": transcript_to_text(c.get("transcript")),
+                    "recording_url": c.get("audio_recording"),
+                }
+            )
+        return {"calls": out, "total": data.get("total"), "count": data.get("count")}
+
+    async def list_agents(self) -> list[dict]:
+        """Return callable agents: [{id, name, type}]."""
+        url = f"{self._settings.ringg_base_url.rstrip('/')}/agent/all"
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(url, headers=self._headers)
+        if resp.status_code >= 400:
+            raise RinggError(f"Ringg agents {resp.status_code}: {resp.text}")
+        agents = resp.json().get("data", {}).get("agents", [])
+        return [
+            {
+                "id": a.get("id"),
+                "name": a.get("agent_display_name") or a.get("agent_name") or a.get("id"),
+                "type": a.get("agent_type"),
+            }
+            for a in agents
+            if a.get("id")
+        ]
+
+    async def get_agent_variables(self, agent_id: str) -> list[str]:
+        """Return an agent's custom_variables (from its latest version config)."""
+        url = f"{self._settings.ringg_base_url.rstrip('/')}/agent/{agent_id}"
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(url, headers=self._headers)
+        if resp.status_code >= 400:
+            raise RinggError(f"Ringg agent {resp.status_code}: {resp.text}")
+        data = resp.json()
+        agents = data.get("agents") or data.get("data", {}).get("agents")
+        version_details = None
+        if isinstance(agents, dict):
+            version_details = agents.get("version_details")
+        elif isinstance(agents, list) and agents:
+            version_details = agents[0].get("version_details")
+        if isinstance(version_details, dict):
+            for ver in version_details.values():
+                cv = (ver.get("agent_config") or {}).get("custom_variables")
+                if cv:
+                    return list(cv)
+        return []
+
     async def list_voices(self, language: str) -> list[dict]:
         url = f"{self._settings.ringg_base_url.rstrip('/')}/agent/voices"
         async with httpx.AsyncClient(timeout=30) as client:

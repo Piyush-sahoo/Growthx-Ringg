@@ -29,7 +29,50 @@ export interface CallRecord {
 export interface OutboundCallRequest {
   customer_name: string;
   phone_number: string;
+  agent_id?: string;
   custom_args_values?: Record<string, unknown>;
+}
+
+export interface AgentSummary {
+  id: string;
+  name: string;
+  type: string | null;
+}
+
+export interface RinggCall {
+  id: string;
+  name: string | null;
+  to_number: string | null;
+  status: string | null;
+  agent_id: string | null;
+  agent_name: string | null;
+  duration: number | null;
+  cost: number | null;
+  currency: string | null;
+  created_at: string | null;
+  transcript: string | null;
+  recording_url: string | null;
+}
+
+export async function listAgents(): Promise<AgentSummary[]> {
+  return handle<AgentSummary[]>(await fetch(`${API_URL}/agents`, { cache: "no-store" }));
+}
+
+export async function getAgentVariables(agentId: string): Promise<string[]> {
+  const r = await handle<{ variables: string[] }>(
+    await fetch(`${API_URL}/agents/${encodeURIComponent(agentId)}/variables`, {
+      cache: "no-store",
+    }),
+  );
+  return r.variables ?? [];
+}
+
+export async function listRinggCalls(agentId?: string): Promise<RinggCall[]> {
+  const q = agentId ? `?agent_id=${encodeURIComponent(agentId)}` : "";
+  const r = await handle<{ calls: RinggCall[] }>(
+    await fetch(`${API_URL}/history${q}`, { cache: "no-store" }),
+  );
+  return r.calls ?? [];
 }
 
 async function handle<T>(res: Response): Promise<T> {

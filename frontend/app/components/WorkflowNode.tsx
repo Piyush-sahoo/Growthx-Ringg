@@ -23,7 +23,7 @@ export default function WorkflowNode({ data }: NodeProps) {
   const d = data as WorkflowNodeData;
   return (
     <div className={`wf-node ${d.kind}${d.active ? " active" : ""}`}>
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Left} />
       <div className="wf-head">
         <span className="wf-dot" />
         {KIND_LABEL[d.kind]}
@@ -36,7 +36,7 @@ export default function WorkflowNode({ data }: NodeProps) {
           <div className="wf-sub">→ {d.outcomes.join(", ")}</div>
         )}
       </div>
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Right} />
     </div>
   );
 }
