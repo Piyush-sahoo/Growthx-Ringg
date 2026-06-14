@@ -7,7 +7,7 @@ the outcome edge, fire any tool nodes, and stop at a terminal or the next call n
 
 from __future__ import annotations
 
-from . import llm, memory, render, ringg, tools
+from . import llm, memory, render, tools
 from .graph import NodeType, WorkflowGraph, next_target
 from .models import CallRecord, CallStatus
 from .store import store
@@ -25,12 +25,16 @@ def _graph_for(record: CallRecord) -> WorkflowGraph:
 
 
 async def ensure_outcome(record: CallRecord) -> str | None:
-    """Use the captured outcome; if absent, classify the transcript with Gemini."""
+    """Use the captured outcome; if absent, classify the transcript with Gemini
+    against the *current call node's* allowed outcomes (not always the check-in set)."""
     if record.outcome:
         return record.outcome
+    g = _graph_for(record)
+    node = g.node(record.current_node_id or g.entry)
+    allowed = node.outcomes if (node and node.outcomes) else REPORTZEN_BRANCHES
     if record.transcript:
         try:
-            classified = llm.classify_outcome(record.transcript, REPORTZEN_BRANCHES)
+            classified = llm.classify_outcome(record.transcript, allowed)
         except llm.LLMError:
             classified = None
         if classified:
@@ -108,6 +112,7 @@ async def run_branch(record: CallRecord) -> list[dict]:
         return actions
 
     target_id = next_target(g, node_id, record.outcome)
+    next_call_node: str | None = None
     while target_id:
         tnode = g.node(target_id)
         if tnode is None:
@@ -120,8 +125,8 @@ async def run_branch(record: CallRecord) -> list[dict]:
             record.current_node_id = tnode.id
             target_id = None
         elif tnode.type == NodeType.call:
-            # Next call in the workflow; placed by the runner in S4/S5.
-            actions.append({"tool": "none", "status": "call_queued", "node": tnode.id})
+            # The workflow routes to another call — queue it (after memory write-back).
+            next_call_node = tnode.id
             record.current_node_id = tnode.id
             target_id = None
 
@@ -130,11 +135,19 @@ async def run_branch(record: CallRecord) -> list[dict]:
     memory.record_outcome(contact, record)
     await store.save_contact(contact)
 
-    # On a granted extension, schedule the memory-carrying follow-up call.
-    analysis = record.analysis or {}
-    if analysis.get("extension_granted") and not record.is_followup:
-        followup_id = await _schedule_followup(record, contact)
-        actions.append({"tool": "none", "status": "followup_scheduled", "call_id": followup_id})
+    # Queue a memory-carrying follow-up for the next call (every use-case: recall,
+    # decision-maker, win-back). Placed on demand via POST /calls/{id}/dispatch —
+    # not auto-dialed, since real timing is deferred (day-before / post-lapse).
+    if next_call_node:
+        followup_id = await _queue_followup(record, contact, next_call_node)
+        actions.append(
+            {
+                "tool": "none",
+                "status": "followup_scheduled",
+                "call_id": followup_id,
+                "node": next_call_node,
+            }
+        )
 
     record.actions = (record.actions or []) + actions
     return actions
@@ -153,9 +166,15 @@ async def _touch_contact(record: CallRecord):
     return contact
 
 
-async def _schedule_followup(record: CallRecord, contact) -> str:
-    """Create + place a follow-up call (day-before-deadline) carrying prior memory."""
-    variables = memory.compile_memory(contact, days_left_override="1")
+async def _queue_followup(record: CallRecord, contact, node_id: str) -> str:
+    """Create a queued, memory-carrying follow-up call for the next call node.
+
+    Not placed here — dispatched on demand (POST /calls/{id}/dispatch) so calls
+    aren't fired back-to-back. The recall carries day-before timing; others keep
+    the contact's days_left.
+    """
+    days_override = "1" if node_id == REPORTZEN_RECALL_NODE else None
+    variables = memory.compile_memory(contact, days_left_override=days_override)
     followup = CallRecord(
         customer_name=record.customer_name,
         phone_number=record.phone_number,
@@ -163,21 +182,8 @@ async def _schedule_followup(record: CallRecord, contact) -> str:
         is_followup=True,
         parent_call_id=record.id,
         workflow_id=record.workflow_id or REPORTZEN_GRAPH.id,
-        current_node_id=REPORTZEN_RECALL_NODE,
+        current_node_id=node_id,
+        status=CallStatus.queued,
     )
     await store.add(followup)
-    try:
-        res = await ringg.ringg_client.place_outbound_call(
-            name=record.customer_name,
-            phone_number=record.phone_number,
-            custom_args_values=variables,
-        )
-        followup.ringg_call_id = (
-            res.get("call_id") or res.get("id") or (res.get("data") or {}).get("call_id")
-        )
-        followup.status = CallStatus.in_progress
-    except ringg.RinggError as exc:
-        followup.status = CallStatus.queued
-        followup.analysis = {"schedule_error": str(exc)}
-    await store.update(followup)
     return followup.id

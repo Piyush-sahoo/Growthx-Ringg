@@ -38,6 +38,14 @@ const VAR_SAMPLES: Record<string, string> = {
 
 const humanize = (s: string) => s.replace(/_/g, " ");
 const sampleFor = (name: string) => VAR_SAMPLES[name] ?? humanize(name);
+
+// Redact phone numbers in the UI — keep country code + last 4, mask the middle.
+const maskPhone = (p?: string | null) => {
+  if (!p) return "—";
+  const s = p.replace(/\s/g, "");
+  if (s.length <= 7) return s;
+  return `${s.slice(0, 3)}${"•".repeat(s.length - 7)}${s.slice(-4)}`;
+};
 const buildSamples = (vars: string[]) =>
   Object.fromEntries(vars.map((v) => [v, sampleFor(v)]));
 
@@ -282,7 +290,7 @@ export default function Home() {
               {calls.map((c) => (
                 <tr key={c.id}>
                   <td>{c.name || <span className="muted">—</span>}</td>
-                  <td className="mono">{c.to_number}</td>
+                  <td className="mono">{maskPhone(c.to_number)}</td>
                   <td>
                     <span className="muted">{c.agent_name || "—"}</span>
                   </td>
