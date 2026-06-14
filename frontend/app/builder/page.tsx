@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { getTemplate, type WorkflowGraph } from "@/lib/api";
+import { useCallback, useEffect, useState } from "react";
+import { getTemplate, listTemplates, type WorkflowGraph } from "@/lib/api";
 import WorkflowVisualizer from "../components/WorkflowVisualizer";
 import TemplateLibrary from "../components/TemplateLibrary";
 import DeployPanel from "../components/DeployPanel";
@@ -27,6 +27,15 @@ export default function BuilderPage() {
     setGraph(g);
     setSelectedId(null);
   }, []);
+
+  // Prefill: auto-load the first template so the canvas shows a graph on open.
+  useEffect(() => {
+    listTemplates()
+      .then((ts) => {
+        if (ts[0]) selectTemplate(ts[0].id);
+      })
+      .catch(() => {});
+  }, [selectTemplate]);
 
   return (
     <main className="container wide grid" style={{ gap: 20 }}>
