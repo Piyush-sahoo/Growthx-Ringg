@@ -13,21 +13,33 @@ import {
 // Variables auto-filled from the name/phone fields — hidden from the dynamic form.
 const AUTO_VARS = new Set(["callee_name", "mobile_number", "customer_name", "phone_number"]);
 
-const VAR_HINTS: Record<string, string> = {
+// Sample values used both as placeholders and for one-click auto-fill.
+const VAR_SAMPLES: Record<string, string> = {
   trial_id: "T-88412",
   days_left: "3",
   accounts_connected: "3",
   reports_sent: "2",
+  integrations_connected: "3",
+  automations_run: "5",
   plan_fit: "Studio",
   decision_owner: "co-founder (rubber stamp)",
-  last_promise: "none (first call)",
-  memory_summary: "First outreach — 3 accounts connected, 2 reports sent",
+  user_email: "asha@brightfunnel.in",
+  last_promise: "retry the Meta connect by Friday",
+  memory_summary:
+    "Activated week 1 — 3 client accounts connected, 2 white-label reports sent — then went quiet.",
+  last_call_outcome: "stuck_wall",
+  last_call_date: "2026-06-12",
+  wall: "Meta OAuth permission scope on a client ad account",
   upgrade_link: "https://app.reportzen.io/up/asha",
-  amount: "499",
   retry_link: "https://pay.example/retry",
+  amount: "499",
+  plan: "Pro",
 };
 
 const humanize = (s: string) => s.replace(/_/g, " ");
+const sampleFor = (name: string) => VAR_SAMPLES[name] ?? humanize(name);
+const buildSamples = (vars: string[]) =>
+  Object.fromEntries(vars.map((v) => [v, sampleFor(v)]));
 
 export default function Home() {
   const [agents, setAgents] = useState<AgentSummary[]>([]);
@@ -53,11 +65,17 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load the selected agent's variables (drives the dynamic fields).
+  // Load the selected agent's variables (drives the dynamic fields) and
+  // auto-fill them with sensible sample values so the form is call-ready.
   useEffect(() => {
     if (!agentId) return;
     getAgentVariables(agentId)
-      .then((v) => setVariables(v.filter((x) => !AUTO_VARS.has(x))))
+      .then((v) => {
+        const fields = v.filter((x) => !AUTO_VARS.has(x));
+        setVariables(fields);
+        setVals(buildSamples(fields));
+        setName((n) => n || "Asha Rao");
+      })
       .catch(() => setVariables([]));
   }, [agentId]);
 
@@ -165,7 +183,28 @@ export default function Home() {
 
           {variables.length > 0 && (
             <div className="grid" style={{ gap: 14 }}>
-              <span className="eyebrow">Agent variables · {selectedAgent?.name}</span>
+              <div
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+              >
+                <span className="eyebrow">Agent variables · {selectedAgent?.name}</span>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setVals(buildSamples(variables))}
+                    style={{ padding: "5px 12px", fontSize: 12 }}
+                  >
+                    Auto-fill
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => setVals({})}
+                    style={{ padding: "5px 12px", fontSize: 12 }}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
               <div className="var-grid">
                 {variables.map((v) => (
                   <div key={v}>
@@ -173,7 +212,7 @@ export default function Home() {
                     <input
                       value={vals[v] ?? ""}
                       onChange={(e) => setVals((s) => ({ ...s, [v]: e.target.value }))}
-                      placeholder={VAR_HINTS[v] ?? humanize(v)}
+                      placeholder={sampleFor(v)}
                     />
                   </div>
                 ))}
