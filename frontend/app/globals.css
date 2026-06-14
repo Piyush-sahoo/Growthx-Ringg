@@ -139,3 +139,313 @@ th {
   font-size: 12px;
   text-transform: uppercase;
 }
+
+/* ---------------- Nav ---------------- */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 24px;
+  background: rgba(11, 13, 18, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav .brand {
+  font-weight: 700;
+  font-size: 15px;
+  margin-right: 8px;
+}
+
+.nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.nav a:hover {
+  color: var(--text);
+  background: var(--panel);
+}
+
+.nav a.active {
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+.nav .spacer {
+  flex: 1;
+}
+
+.nav .credits {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.nav .credits b {
+  color: var(--green);
+}
+
+.container.wide {
+  max-width: 1280px;
+}
+
+button.secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+button.secondary:hover {
+  background: var(--panel);
+}
+
+/* ---------------- Builder layout ---------------- */
+.builder-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr 340px;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .builder-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.flow-wrap {
+  height: 620px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.template-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  background: #0e1119;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.template-item:hover {
+  border-color: var(--accent);
+}
+
+.template-item.active {
+  border-color: var(--accent);
+  background: rgba(91, 124, 250, 0.1);
+}
+
+.template-item .tid {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* ---------------- React Flow custom nodes ---------------- */
+.wf-node {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  min-width: 160px;
+  max-width: 220px;
+  font-size: 13px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.wf-node .wf-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  border-radius: 12px 12px 0 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+.wf-node .wf-body {
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
+.wf-node .wf-sub {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 400;
+  margin-top: 4px;
+}
+
+.wf-node.call .wf-head {
+  background: rgba(91, 124, 250, 0.16);
+  color: var(--accent);
+}
+.wf-node.call {
+  border-color: rgba(91, 124, 250, 0.5);
+}
+
+.wf-node.tool .wf-head {
+  background: rgba(255, 176, 32, 0.16);
+  color: var(--amber);
+}
+.wf-node.tool {
+  border-color: rgba(255, 176, 32, 0.5);
+}
+
+.wf-node.terminal .wf-head {
+  background: rgba(46, 204, 113, 0.16);
+  color: var(--green);
+}
+.wf-node.terminal {
+  border-color: rgba(46, 204, 113, 0.5);
+}
+
+.wf-node.active {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.18), 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.wf-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+.wf-node.call .wf-dot {
+  background: var(--accent);
+}
+.wf-node.tool .wf-dot {
+  background: var(--amber);
+}
+.wf-node.terminal .wf-dot {
+  background: var(--green);
+}
+
+/* React Flow surface should match dark theme */
+.react-flow__attribution {
+  display: none;
+}
+.react-flow__controls button {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  fill: var(--text);
+}
+.react-flow__edge-text {
+  fill: var(--text);
+  font-size: 11px;
+}
+.react-flow__edge-textbg {
+  fill: var(--bg);
+}
+
+/* ---------------- Chat ---------------- */
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.chat-msg {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  max-width: 90%;
+}
+
+.chat-msg.user {
+  align-self: flex-end;
+  background: rgba(91, 124, 250, 0.18);
+  border: 1px solid rgba(91, 124, 250, 0.4);
+}
+
+.chat-msg.assistant {
+  align-self: flex-start;
+  background: #0e1119;
+  border: 1px solid var(--border);
+}
+
+.chat-msg.system {
+  align-self: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ---------------- Impact ---------------- */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.stat {
+  background: #0e1119;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.stat .big {
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.stat .lbl {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 200px 1fr 50px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.bar-track {
+  background: #0e1119;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  height: 14px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  background: var(--accent);
+  height: 100%;
+  border-radius: 999px;
+}
+
+.deploy-panel {
+  margin-top: 12px;
+}

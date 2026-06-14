@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Nav from "./components/Nav";
 
 export const metadata: Metadata = {
-  title: "GrowthX × Ringg AI — Voice Agent Console",
-  description: "Trigger Ringg AI outbound calls and review call outcomes.",
+  title: "FlowForge — GrowthX × Ringg AI",
+  description: "Design, deploy and measure voice-agent workflows.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Nav />
+        {children}
+      </body>
     </html>
   );
 }
