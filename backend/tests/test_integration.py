@@ -104,19 +104,24 @@ def test_ringg_credits_live():
 @pytest.mark.integration
 @pytest.mark.skipif(
     not (settings.ringg_api_key and settings.ringg_assistant_id),
-    reason="needs RINGG_API_KEY + RINGG_ASSISTANT_ID for the A-lite fallback",
+    reason="needs RINGG_API_KEY + RINGG_ASSISTANT_ID",
 )
 def test_deploy_live_subscribes_real_agent():
-    """Live deploy: create-agent may be KYC-gated (falls back), but the webhook
-    subscription on the resulting real agent succeeds."""
+    """Live deploy with the call node pre-bound to our real agent: no junk agent is
+    created on each run, and the real webhook subscription succeeds (HTTP 200)."""
     from fastapi.testclient import TestClient
 
     from app.main import app
 
-    resp = TestClient(app).post(
-        "/workflows/deploy", json={"template_id": "reportzen-trial-to-paid"}
-    )
+    client = TestClient(app)
+    g = client.get("/workflows/templates/reportzen-trial-to-paid").json()
+    for n in g["nodes"]:
+        if n["type"] == "call":
+            n["agent_id"] = settings.ringg_assistant_id  # reuse → subscribe only
+
+    resp = client.post("/workflows/deploy", json={"graph": g})
     assert resp.status_code == 200
     agent = resp.json()["deployment"]["agents"][0]
-    assert agent["agent_id"]  # created, or reused via A-lite fallback
+    assert agent["agent_id"] == settings.ringg_assistant_id
+    assert agent["created"] is False
     assert agent["subscribed"] == "subscribed"
