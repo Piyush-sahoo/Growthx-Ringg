@@ -1,0 +1,46 @@
+name: Frontend Deploy (Vercel)
+
+# Deploys the Next.js frontend to Vercel on every push to main.
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   VERCEL_TOKEN        — Vercel account token
+#   VERCEL_ORG_ID       — from `vercel link` (.vercel/project.json) or dashboard
+#   VERCEL_PROJECT_ID   — from `vercel link` (.vercel/project.json) or dashboard
+# Set NEXT_PUBLIC_API_URL in the Vercel project's Environment Variables.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Skip if the Vercel token secret is not configured.
+    if: ${{ vars.ENABLE_VERCEL_DEPLOY == 'true' }}
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

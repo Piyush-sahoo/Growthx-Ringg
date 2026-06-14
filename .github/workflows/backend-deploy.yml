@@ -1,0 +1,31 @@
+name: Backend Deploy (Render)
+
+# Triggers a Render deploy on every push to main that touches the backend.
+# Setup:
+#   1. Create a Render service from this repo (or via render.yaml blueprint).
+#   2. Service → Settings → Deploy Hook → copy the URL.
+#   3. Add it as repo secret RENDER_DEPLOY_HOOK_URL.
+#   4. Set repo variable ENABLE_RENDER_DEPLOY = true to activate this workflow.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "render.yaml"
+      - ".github/workflows/backend-deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ vars.ENABLE_RENDER_DEPLOY == 'true' }}
+    steps:
+      - name: Trigger Render deploy
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL secret is not set." >&2
+            exit 1
+          fi
+          curl -fsSL -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          echo "Render deploy triggered."
