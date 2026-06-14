@@ -20,10 +20,22 @@ class InMemoryRepository:
     def __init__(self) -> None:
         self._calls: dict[str, CallRecord] = {}
         self._seen: set[str] = set()
+        self._workflows: dict[str, dict] = {}
         self._lock = Lock()
 
     async def connect(self) -> None:  # no-op
         return None
+
+    async def save_workflow(self, graph: dict) -> dict:
+        async with self._lock:
+            self._workflows[graph["id"]] = graph
+        return graph
+
+    async def get_workflow(self, workflow_id: str) -> dict | None:
+        return self._workflows.get(workflow_id)
+
+    async def list_workflows(self) -> list[dict]:
+        return list(self._workflows.values())
 
     async def close(self) -> None:  # no-op
         return None
@@ -69,6 +81,7 @@ class MongoRepository:
         self._client = None
         self._calls = None
         self._events = None
+        self._workflows = None
 
     async def connect(self) -> None:
         from motor.motor_asyncio import AsyncIOMotorClient
@@ -77,9 +90,28 @@ class MongoRepository:
         db = self._client[self._db_name]
         self._calls = db["calls"]
         self._events = db["events"]
+        self._workflows = db["workflows"]
         # Unique index gives us atomic dedupe via duplicate-key errors.
         await self._events.create_index("key", unique=True)
         await self._calls.create_index("ringg_call_id")
+
+    async def save_workflow(self, graph: dict) -> dict:
+        doc = {**graph, "_id": graph["id"]}
+        await self._workflows.replace_one({"_id": graph["id"]}, doc, upsert=True)
+        return graph
+
+    async def get_workflow(self, workflow_id: str) -> dict | None:
+        doc = await self._workflows.find_one({"_id": workflow_id})
+        if doc:
+            doc.pop("_id", None)
+        return doc
+
+    async def list_workflows(self) -> list[dict]:
+        out = []
+        async for d in self._workflows.find():
+            d.pop("_id", None)
+            out.append(d)
+        return out
 
     async def close(self) -> None:
         if self._client is not None:

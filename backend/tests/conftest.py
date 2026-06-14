@@ -11,6 +11,7 @@ def _reset_store():
     if isinstance(store, InMemoryRepository):
         store._calls.clear()
         store._seen.clear()
+        store._workflows.clear()
     yield
 
 

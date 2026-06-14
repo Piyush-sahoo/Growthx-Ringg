@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     # Shared secret used to verify inbound Ringg webhook calls.
     ringg_webhook_secret: str = ""
 
+    # Deploy (S4): where Ringg posts webhooks, and defaults for created agents.
+    webhook_callback_url: str = "https://growthx-ringg-backend.onrender.com/webhooks/ringg"
+    agent_primary_language: str = "en-IN"
+    agent_secondary_language: str = "hi-IN"
+    agent_voice_id: str = ""  # if empty, deploy resolves the first voice for the language
+
     # Gemini (google-genai) — used for the brainstorm/generation + branch fallback.
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"

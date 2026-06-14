@@ -87,3 +87,36 @@ def test_twilio_auth_live():
     )
     assert resp.status_code == 200
     assert resp.json().get("status") == "active"
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(not settings.ringg_api_key, reason="RINGG_API_KEY not set")
+def test_ringg_credits_live():
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    resp = TestClient(app).get("/workflows/credits")
+    assert resp.status_code == 200
+    assert resp.json()["credits"] >= 0
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(
+    not (settings.ringg_api_key and settings.ringg_assistant_id),
+    reason="needs RINGG_API_KEY + RINGG_ASSISTANT_ID for the A-lite fallback",
+)
+def test_deploy_live_subscribes_real_agent():
+    """Live deploy: create-agent may be KYC-gated (falls back), but the webhook
+    subscription on the resulting real agent succeeds."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    resp = TestClient(app).post(
+        "/workflows/deploy", json={"template_id": "reportzen-trial-to-paid"}
+    )
+    assert resp.status_code == 200
+    agent = resp.json()["deployment"]["agents"][0]
+    assert agent["agent_id"]  # created, or reused via A-lite fallback
+    assert agent["subscribed"] == "subscribed"
