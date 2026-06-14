@@ -261,6 +261,80 @@ select.select option {
   gap: 14px;
 }
 
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  box-shadow: none;
+  cursor: pointer;
+}
+.chip:hover {
+  border-color: var(--signal);
+  color: var(--signal);
+  transform: none;
+  box-shadow: none;
+}
+
+/* ---- Landing ---- */
+.landing {
+  padding-top: 72px;
+}
+.landing-hero {
+  display: grid;
+  gap: 18px;
+  padding: 24px 0 8px;
+}
+.landing-hero h1 {
+  font-size: clamp(3rem, 8vw, 5.4rem);
+}
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+}
+.btn {
+  display: inline-block;
+  background: var(--signal);
+  color: var(--signal-ink);
+  border: 1px solid var(--signal);
+  border-radius: var(--radius-sm);
+  padding: 13px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 10px 24px -12px var(--signal-glow);
+  transition: transform 0.12s, box-shadow 0.2s;
+}
+.btn:hover {
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px -12px var(--signal-glow);
+}
+.btn.ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: none;
+}
+.btn.ghost:hover {
+  background: var(--raise);
+  border-color: var(--faint);
+}
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
 /* ---- Buttons ---- */
 button {
   font-family: var(--font-sans);

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { getCredits } from "@/lib/api";
 
 const LINKS = [
-  { href: "/", label: "Console" },
+  { href: "/console", label: "Console" },
   { href: "/builder", label: "Builder" },
   { href: "/tools", label: "Tools" },
   { href: "/impact", label: "Impact" },
