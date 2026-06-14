@@ -68,6 +68,9 @@ class CallRecord(BaseModel):
     # Tool actions fired by the branch engine (email/whatsapp/...).
     actions: list[dict[str, Any]] = Field(default_factory=list)
     checkout_link_sent: bool = False
+    # Graph execution state (S3+).
+    workflow_id: str | None = None
+    current_node_id: str | None = None
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 

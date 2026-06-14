@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routers import calls, health, webhooks
+from .routers import calls, health, webhooks, workflows
 from .store import store
 
 settings = get_settings()
@@ -41,6 +41,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(calls.router)
 app.include_router(webhooks.router)
+app.include_router(workflows.router)
 
 
 @app.get("/", tags=["health"])
