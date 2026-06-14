@@ -1,41 +1,132 @@
-"""In-memory call store.
+"""Async repository for call/run records (Context Objects).
 
-Hackathon-grade persistence: a process-local dict. Swap for Supabase/Postgres
-later by keeping the same method signatures. Thread-safe via a simple lock.
+Backed by MongoDB (Motor) when ``MONGODB_URI`` is set; otherwise an in-memory
+implementation so dev and tests run without a database. Both implementations
+share the same async interface and an event-dedupe registry keyed by
+``call_id + event_type`` (Ringg retries webhooks).
 """
 
-from threading import Lock
+from __future__ import annotations
 
+from asyncio import Lock
+
+from .config import get_settings
 from .models import CallRecord
 
 
-class CallStore:
+class InMemoryRepository:
+    """Process-local async store. Used in dev/tests (no MONGODB_URI)."""
+
     def __init__(self) -> None:
         self._calls: dict[str, CallRecord] = {}
+        self._seen: set[str] = set()
         self._lock = Lock()
 
-    def add(self, record: CallRecord) -> CallRecord:
-        with self._lock:
-            self._calls[record.id] = record
-        return record
-
-    def get(self, call_id: str) -> CallRecord | None:
-        return self._calls.get(call_id)
-
-    def get_by_ringg_id(self, ringg_call_id: str) -> CallRecord | None:
-        for record in self._calls.values():
-            if record.ringg_call_id and record.ringg_call_id == ringg_call_id:
-                return record
+    async def connect(self) -> None:  # no-op
         return None
 
-    def list(self) -> list[CallRecord]:
-        return sorted(self._calls.values(), key=lambda r: r.created_at, reverse=True)
+    async def close(self) -> None:  # no-op
+        return None
 
-    def update(self, record: CallRecord) -> CallRecord:
-        with self._lock:
+    async def add(self, record: CallRecord) -> CallRecord:
+        async with self._lock:
             self._calls[record.id] = record
         return record
 
+    async def get(self, call_id: str) -> CallRecord | None:
+        return self._calls.get(call_id)
 
-# Singleton store shared across the app.
-store = CallStore()
+    async def get_by_ringg_id(self, ringg_call_id: str) -> CallRecord | None:
+        for r in self._calls.values():
+            if r.ringg_call_id and r.ringg_call_id == ringg_call_id:
+                return r
+        return None
+
+    async def list(self) -> list[CallRecord]:
+        return sorted(self._calls.values(), key=lambda r: r.created_at, reverse=True)
+
+    async def update(self, record: CallRecord) -> CallRecord:
+        async with self._lock:
+            self._calls[record.id] = record
+        return record
+
+    async def seen_event(self, call_id: str, event_type: str) -> bool:
+        """Return True if this (call_id, event_type) was already processed."""
+        key = f"{call_id}:{event_type}"
+        async with self._lock:
+            if key in self._seen:
+                return True
+            self._seen.add(key)
+            return False
+
+
+class MongoRepository:
+    """MongoDB-backed store (Motor). Documents keyed by record.id."""
+
+    def __init__(self, uri: str, db_name: str) -> None:
+        self._uri = uri
+        self._db_name = db_name
+        self._client = None
+        self._calls = None
+        self._events = None
+
+    async def connect(self) -> None:
+        from motor.motor_asyncio import AsyncIOMotorClient
+
+        self._client = AsyncIOMotorClient(self._uri)
+        db = self._client[self._db_name]
+        self._calls = db["calls"]
+        self._events = db["events"]
+        # Unique index gives us atomic dedupe via duplicate-key errors.
+        await self._events.create_index("key", unique=True)
+        await self._calls.create_index("ringg_call_id")
+
+    async def close(self) -> None:
+        if self._client is not None:
+            self._client.close()
+
+    @staticmethod
+    def _doc(record: CallRecord) -> dict:
+        d = record.model_dump(mode="json")
+        d["_id"] = record.id
+        return d
+
+    async def add(self, record: CallRecord) -> CallRecord:
+        await self._calls.replace_one({"_id": record.id}, self._doc(record), upsert=True)
+        return record
+
+    async def get(self, call_id: str) -> CallRecord | None:
+        doc = await self._calls.find_one({"_id": call_id})
+        return CallRecord(**doc) if doc else None
+
+    async def get_by_ringg_id(self, ringg_call_id: str) -> CallRecord | None:
+        doc = await self._calls.find_one({"ringg_call_id": ringg_call_id})
+        return CallRecord(**doc) if doc else None
+
+    async def list(self) -> list[CallRecord]:
+        cursor = self._calls.find().sort("created_at", -1)
+        return [CallRecord(**d) async for d in cursor]
+
+    async def update(self, record: CallRecord) -> CallRecord:
+        await self._calls.replace_one({"_id": record.id}, self._doc(record), upsert=True)
+        return record
+
+    async def seen_event(self, call_id: str, event_type: str) -> bool:
+        from pymongo.errors import DuplicateKeyError
+
+        try:
+            await self._events.insert_one({"key": f"{call_id}:{event_type}"})
+            return False
+        except DuplicateKeyError:
+            return True
+
+
+def _build_repository():
+    settings = get_settings()
+    if settings.mongodb_uri:
+        return MongoRepository(settings.mongodb_uri, settings.mongodb_db)
+    return InMemoryRepository()
+
+
+# Singleton repository shared across the app. `connect()` is called on startup.
+store = _build_repository()

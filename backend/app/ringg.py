@@ -26,14 +26,16 @@ class RinggClient:
     async def place_outbound_call(
         self,
         *,
+        name: str,
         phone_number: str,
         custom_args_values: dict,
         assistant_id: str | None = None,
     ) -> dict:
         """Place a single outbound call and return the Ringg response JSON.
 
-        Phone numbers must be E.164 (e.g. +919876543210). Provide a caller id via
-        RINGG_FROM_NUMBER_ID (preferred). Returns the Ringg JSON containing call_id.
+        Contract (docs.ringg.ai initiate-individual-call): body uses `name`,
+        `mobile_number` (E.164), `agent_id`, and exactly one caller id
+        (`from_number_id` preferred). Returns the Ringg JSON containing the call id.
         """
         if not self.configured:
             raise RinggError(
@@ -46,8 +48,9 @@ class RinggClient:
 
         url = f"{self._settings.ringg_base_url.rstrip('/')}/calling/outbound/individual"
         payload: dict = {
+            "name": name,
+            "mobile_number": phone_number,
             "agent_id": assistant,
-            "recipient_phone_number": phone_number,
             "custom_args_values": custom_args_values,
         }
         # Prefer from_number_id over a raw number (never send both).

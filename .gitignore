@@ -39,3 +39,6 @@ CREDENTIALS.local.md
 .idea/
 .vscode/
 *.swp
+
+# Claude Code local artifacts
+.claude/

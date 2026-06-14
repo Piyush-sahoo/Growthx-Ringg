@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     app_name: str = "growthx-ringg-backend"
     environment: str = "development"
 
+    # Persistence — MongoDB Atlas. If unset, an in-memory store is used (dev/tests).
+    mongodb_uri: str = ""
+    mongodb_db: str = "flowforge"
+
     # Ringg AI — https://docs.ringg.ai  (auth: X-API-KEY header)
     ringg_api_key: str = ""
     ringg_base_url: str = "https://prod-api.ringg.ai/ca/api/v0"
@@ -23,6 +27,10 @@ class Settings(BaseSettings):
     ringg_from_number_id: str = ""
     # Shared secret used to verify inbound Ringg webhook calls.
     ringg_webhook_secret: str = ""
+
+    # Gemini (google-genai) — used for the brainstorm/generation + branch fallback.
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
 
     # CORS — comma-separated list of allowed origins for the frontend.
     cors_origins: str = "http://localhost:3000"

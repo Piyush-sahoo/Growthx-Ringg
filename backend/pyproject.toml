@@ -8,3 +8,7 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "integration: hits live external APIs (Ringg, Gemini); needs keys in env/.env",
+]

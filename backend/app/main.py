@@ -1,12 +1,24 @@
 """FastAPI entrypoint for the GrowthX × Ringg AI buildathon backend."""
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .routers import calls, health, webhooks
+from .store import store
 
 settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Connect the repository (Motor) on startup; close it on shutdown.
+    await store.connect()
+    yield
+    await store.close()
+
 
 app = FastAPI(
     title="GrowthX × Ringg AI — Backend",
@@ -15,6 +27,7 @@ app = FastAPI(
         "(transcript, recording, analysis). See /docs."
     ),
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

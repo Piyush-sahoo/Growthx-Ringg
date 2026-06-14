@@ -12,6 +12,27 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
+def transcript_to_text(transcript: Any) -> str | None:
+    """Flatten a Ringg transcript (array of {bot}/{user} turns) into readable text.
+
+    Accepts a plain string too (returned as-is) for resilience.
+    """
+    if transcript is None:
+        return None
+    if isinstance(transcript, str):
+        return transcript
+    if isinstance(transcript, list):
+        lines: list[str] = []
+        for turn in transcript:
+            if isinstance(turn, dict):
+                for role, text in turn.items():
+                    lines.append(f"{role}: {text}")
+            else:
+                lines.append(str(turn))
+        return "\n".join(lines) if lines else None
+    return str(transcript)
+
+
 class CallStatus(str, Enum):
     queued = "queued"
     in_progress = "in_progress"
@@ -37,9 +58,13 @@ class CallRecord(BaseModel):
     custom_args_values: dict[str, Any] = Field(default_factory=dict)
     status: CallStatus = CallStatus.queued
     ringg_call_id: str | None = None
+    # Readable joined transcript (for display) + raw Ringg turn array.
     transcript: str | None = None
+    transcript_turns: list[dict[str, Any]] | None = None
     recording_url: str | None = None
     analysis: dict[str, Any] | None = None
+    # Structured outcome from Ringg custom analysis (drives branching in S2+).
+    outcome: str | None = None
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 
@@ -57,8 +82,13 @@ class RinggWebhookEvent(BaseModel):
     event_type: str | None = None
     call_id: str | None = None
     status: str | None = None
-    transcript: str | None = None
+    # Ringg sends transcript as an array of turn objects ({"bot": ...}/{"user": ...});
+    # accept str too for resilience.
+    transcript: Any | None = None
     recording_url: str | None = None
+    # Custom-analysis result; the structured `outcome` lives here or in client_analysis.
     analysis: dict[str, Any] | None = None
+    client_analysis: dict[str, Any] | None = None
+    platform_analysis: dict[str, Any] | None = None
     # Echoed-back variables we sent when placing the call.
     custom_args_values: dict[str, Any] | None = None

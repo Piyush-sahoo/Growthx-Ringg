@@ -4,3 +4,5 @@ pydantic==2.10.4
 pydantic-settings==2.7.1
 httpx==0.28.1
 python-dotenv==1.0.1
+motor==3.7.1
+google-genai==2.8.0
