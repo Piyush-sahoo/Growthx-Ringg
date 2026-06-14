@@ -1,0 +1,81 @@
+{
+  "trial_id": {
+    "type": "string",
+    "prompt": "Return the trial ID supplied in call variables. Do not infer one."
+  },
+  "trial_status": {
+    "type": "string",
+    "allowed_values": [
+      "activated_distracted",
+      "stakeholder_loop",
+      "stuck_wall",
+      "price_fit",
+      "tourist",
+      "callback"
+    ],
+    "prompt": "Choose exactly one primary outcome supported by the conversation."
+  },
+  "wall_description": {
+    "type": "string",
+    "nullable": true,
+    "prompt": "State the concrete blocker in the caller's terms. Use null when none was identified."
+  },
+  "extension_granted": {
+    "type": "boolean",
+    "prompt": "True only when an extension was explicitly granted."
+  },
+  "extension_days": {
+    "type": "number",
+    "prompt": "Number of newly granted extension days. Use 0 when none was granted."
+  },
+  "extension_count": {
+    "type": "number",
+    "prompt": "Total extension count after this call, using the supplied prior count and confirmed new action."
+  },
+  "plan_fit": {
+    "type": "string",
+    "nullable": true,
+    "prompt": "The confirmed plan fit, such as Studio or Pro. Use null if not discussed."
+  },
+  "decision_owner": {
+    "type": "string",
+    "nullable": true,
+    "prompt": "The person or role confirmed to own the buying decision. Use null if unknown."
+  },
+  "checkout_link_sent": {
+    "type": "boolean",
+    "prompt": "True only if the call or tool result confirms successful link delivery."
+  },
+  "followup_channel": {
+    "type": "string",
+    "nullable": true,
+    "prompt": "The confirmed delivery channel used or requested. Use null when none was selected."
+  },
+  "callback_at": {
+    "type": "string",
+    "nullable": true,
+    "prompt": "Confirmed callback timestamp with timezone when available. Use null if no callback was booked."
+  },
+  "human_followup_required": {
+    "type": "boolean",
+    "prompt": "True when a human must answer, fix, approve, or follow up."
+  },
+  "next_action": {
+    "type": "string",
+    "nullable": true,
+    "prompt": "The single confirmed next action, including owner and timing when stated."
+  },
+  "last_promise": {
+    "type": "string",
+    "nullable": true,
+    "prompt": "The exact operational commitment that the next call must honor. Use null when no promise was made."
+  },
+  "do_not_contact": {
+    "type": "boolean",
+    "prompt": "True when the caller opts out, asks not to be contacted, or completes a clean tourist close that stops the drip."
+  },
+  "converted_on_call": {
+    "type": "boolean",
+    "prompt": "True only when paid conversion is confirmed during the call."
+  }
+}

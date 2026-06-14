@@ -1,0 +1,40 @@
+{
+  "name": "Demo User",
+  "mobile_number": "${CALLEE_PHONE_E164}",
+  "agent_id": "${RINGG_AGENT_ID}",
+  "from_number_id": "${RINGG_FROM_NUMBER_ID}",
+  "custom_args_values": {
+    "callee_name": "Demo User",
+    "mobile_number": "${CALLEE_PHONE_E164}",
+    "trial_id": "T-1234568",
+    "trial_end_date": "2026-06-17",
+    "days_left": "3",
+    "accounts_connected": "3",
+    "reports_sent": "2",
+    "plan_fit": "Studio",
+    "checkout_link": "https://app.example.com/upgrade/T-1234568",
+    "followup_channel": "email",
+    "memory_summary": "First outreach. Activated during week one, then activity stopped.",
+    "last_call_date": "",
+    "last_call_outcome": "",
+    "last_promise": "",
+    "extension_count": "0",
+    "extension_until": "",
+    "prior_wall": "",
+    "decision_owner": "",
+    "do_not_contact": "false"
+  },
+  "call_config": {
+    "call_time": {
+      "call_start_time": "09:00",
+      "call_end_time": "18:00",
+      "timezone": "Asia/Kolkata"
+    },
+    "call_retry_config": {
+      "retry_count": 1,
+      "retry_busy": 30,
+      "retry_not_picked": 30,
+      "retry_failed": 30
+    }
+  }
+}
