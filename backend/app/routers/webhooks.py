@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Header, HTTPException
 
+from .. import engine
 from ..config import get_settings
 from ..models import CallRecord, CallStatus, RinggWebhookEvent, transcript_to_text
 from ..store import store
@@ -79,15 +80,26 @@ async def ringg_webhook(
     if event.call_id and not record.ringg_call_id:
         record.ringg_call_id = event.call_id
 
-    if event_name in COMPLETION_EVENTS or (event.status or "").lower() in {
+    is_completion = event_name in COMPLETION_EVENTS or (event.status or "").lower() in {
         "completed",
         "ended",
         "success",
-    }:
+    }
+    if is_completion:
         record.status = CallStatus.completed
     elif (event.status or "").lower() in {"failed", "error"}:
         record.status = CallStatus.failed
 
+    # On completion, resolve the branch (LLM fallback if no outcome) and fire its tools.
+    if is_completion:
+        await engine.ensure_outcome(record)
+        await engine.run_branch(record)
+
     record.updated_at = datetime.now(UTC)
     await store.update(record)
-    return {"ok": True, "call_id": record.id, "outcome": record.outcome}
+    return {
+        "ok": True,
+        "call_id": record.id,
+        "outcome": record.outcome,
+        "actions": record.actions,
+    }

@@ -115,7 +115,8 @@ export default function Home() {
                 <th>Customer</th>
                 <th>Phone</th>
                 <th>Status</th>
-                <th>Transcript / analysis</th>
+                <th>Outcome / actions</th>
+                <th>Transcript</th>
               </tr>
             </thead>
             <tbody>
@@ -125,6 +126,19 @@ export default function Home() {
                   <td>{c.phone_number}</td>
                   <td>
                     <span className={`badge ${c.status}`}>{c.status.replace("_", " ")}</span>
+                  </td>
+                  <td>
+                    {c.outcome ? (
+                      <span>{c.outcome.replace(/_/g, " ")}</span>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                    {c.checkout_link_sent && (
+                      <>
+                        {" "}
+                        <span className="badge completed">link sent</span>
+                      </>
+                    )}
                   </td>
                   <td>
                     {c.transcript ? (

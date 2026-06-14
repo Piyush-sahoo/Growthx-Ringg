@@ -8,7 +8,7 @@ Run just these with:  pytest -m integration
 import httpx
 import pytest
 
-from app import llm
+from app import llm, tools
 from app.config import get_settings
 
 settings = get_settings()
@@ -61,3 +61,29 @@ def test_gemini_classify_live():
     )
     assert out in BRANCHES
     assert out == "stuck_wall"
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(not settings.resend_api_key, reason="RESEND_API_KEY not set")
+async def test_resend_send_live():
+    """Resend accepts a real send to its test inbox and returns an id."""
+    res = await tools.send_email(
+        to="delivered@resend.dev",
+        subject="FlowForge live test",
+        html='<p>Upgrade: <a href="https://app.reportzen.example/upgrade">link</a></p>',
+    )
+    assert res.get("id")
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(not tools.whatsapp_configured(), reason="Twilio not configured")
+def test_twilio_auth_live():
+    """Twilio Account SID + Auth Token authenticate against the API."""
+    sid = settings.twilio_account_sid
+    resp = httpx.get(
+        f"https://api.twilio.com/2010-04-01/Accounts/{sid}.json",
+        auth=(sid, settings.twilio_auth_token),
+        timeout=30,
+    )
+    assert resp.status_code == 200
+    assert resp.json().get("status") == "active"

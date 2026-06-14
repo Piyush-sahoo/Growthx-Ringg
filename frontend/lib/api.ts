@@ -15,6 +15,9 @@ export interface CallRecord {
   transcript: string | null;
   recording_url: string | null;
   analysis: Record<string, unknown> | null;
+  outcome: string | null;
+  actions: Array<Record<string, unknown>>;
+  checkout_link_sent: boolean;
   created_at: string;
   updated_at: string;
 }

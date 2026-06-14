@@ -32,6 +32,15 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
 
+    # Resend — email tool (checkout link, forwardable summary).
+    resend_api_key: str = ""
+    resend_from: str = "FlowForge <onboarding@resend.dev>"
+
+    # Twilio — WhatsApp tool (link delivery via the sandbox).
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_whatsapp_from: str = ""  # e.g. "whatsapp:+14155238886"
+
     # CORS — comma-separated list of allowed origins for the frontend.
     cors_origins: str = "http://localhost:3000"
 

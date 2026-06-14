@@ -65,6 +65,9 @@ class CallRecord(BaseModel):
     analysis: dict[str, Any] | None = None
     # Structured outcome from Ringg custom analysis (drives branching in S2+).
     outcome: str | None = None
+    # Tool actions fired by the branch engine (email/whatsapp/...).
+    actions: list[dict[str, Any]] = Field(default_factory=list)
+    checkout_link_sent: bool = False
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 
