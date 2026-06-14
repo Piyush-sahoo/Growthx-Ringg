@@ -57,9 +57,15 @@ export default function ImpactPage() {
 
   return (
     <main className="container wide grid" style={{ gap: 20 }}>
-      <header>
-        <h1 style={{ margin: 0 }}>Impact Dashboard</h1>
-        <p className="muted">Outcomes, checkout links, follow-ups and called-cohort conversion.</p>
+      <header className="hero reveal">
+        <span className="eyebrow">Business impact</span>
+        <h1>
+          Outcomes, <em>not</em> features.
+        </h1>
+        <p className="lede">
+          Outcomes, checkout links, follow-ups and called-cohort conversion — measured live
+          from every call the agents complete.
+        </p>
       </header>
 
       {error && <p className="error">{error}</p>}
@@ -93,7 +99,7 @@ export default function ImpactPage() {
           <div>
             {stats.outcomes.map(([outcome, count]) => (
               <div className="bar-row" key={outcome}>
-                <span style={{ textTransform: "capitalize" }}>{outcome.replace(/_/g, " ")}</span>
+                <span className="bar-name">{outcome.replace(/_/g, " ")}</span>
                 <div className="bar-track">
                   <div
                     className="bar-fill"

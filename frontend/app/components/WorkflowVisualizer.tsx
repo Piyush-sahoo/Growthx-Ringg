@@ -95,7 +95,7 @@ export default function WorkflowVisualizer({
       label: e.on,
       labelBgPadding: [4, 2] as [number, number],
       markerEnd: { type: MarkerType.ArrowClosed },
-      style: { stroke: "#475069" },
+      style: { stroke: "#2a2d36" },
     }));
   }, [graph]);
 
@@ -116,8 +116,8 @@ export default function WorkflowVisualizer({
           return {
             ...e,
             animated: taken,
-            style: { stroke: taken ? "#2ecc71" : "#475069", strokeWidth: taken ? 2.5 : 1 },
-            markerEnd: { type: MarkerType.ArrowClosed, color: taken ? "#2ecc71" : "#475069" },
+            style: { stroke: taken ? "#c8f135" : "#2a2d36", strokeWidth: taken ? 2.5 : 1 },
+            markerEnd: { type: MarkerType.ArrowClosed, color: taken ? "#c8f135" : "#2a2d36" },
           };
         }),
       );
@@ -178,7 +178,7 @@ export default function WorkflowVisualizer({
         proOptions={{ hideAttribution: true }}
         colorMode="dark"
       >
-        <Background color="#262b3a" gap={20} />
+        <Background color="#23252d" gap={20} />
         <Controls />
       </ReactFlow>
     </div>

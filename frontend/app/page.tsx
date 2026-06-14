@@ -55,16 +55,19 @@ export default function Home() {
 
   return (
     <main className="container grid" style={{ gap: 28 }}>
-      <header>
-        <h1 style={{ margin: 0 }}>Voice Agent Console</h1>
-        <p className="muted">
-          GrowthX × Ringg AI — trigger an outbound call, then watch the transcript and
-          analysis land via webhook.
+      <header className="hero reveal">
+        <span className="eyebrow">Live console · Ringg AI</span>
+        <h1>
+          Place the call.<br />Watch it <em>think</em>.
+        </h1>
+        <p className="lede">
+          Trigger an outbound voice agent, then watch the outcome, transcript and the
+          tools it fires land in real time — straight off the post-call webhook.
         </p>
       </header>
 
-      <section className="card">
-        <h2 style={{ marginTop: 0, fontSize: 18 }}>New outbound call</h2>
+      <section className="card reveal">
+        <h2>New outbound call</h2>
         <form className="grid" onSubmit={onSubmit}>
           <div className="row">
             <div>
@@ -104,8 +107,8 @@ export default function Home() {
         </form>
       </section>
 
-      <section className="card">
-        <h2 style={{ marginTop: 0, fontSize: 18 }}>Call history</h2>
+      <section className="card reveal">
+        <h2>Call history</h2>
         {calls.length === 0 ? (
           <p className="muted">No calls yet. Place one above.</p>
         ) : (

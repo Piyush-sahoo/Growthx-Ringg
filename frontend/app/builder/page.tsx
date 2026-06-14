@@ -30,11 +30,15 @@ export default function BuilderPage() {
 
   return (
     <main className="container wide grid" style={{ gap: 20 }}>
-      <header>
-        <h1 style={{ margin: 0 }}>Workflow Builder</h1>
-        <p className="muted">
-          Pick a template or brainstorm a new flow, watch it render, then deploy. The canvas
-          highlights the live taken-path from the most recent call.
+      <header className="hero reveal">
+        <span className="eyebrow">Workflow architect</span>
+        <h1>
+          Describe it. <em>Deploy</em> it.
+        </h1>
+        <p className="lede">
+          Pick a template or brainstorm a new flow in plain language, watch it render as a
+          live graph, then deploy real Ringg agents. The canvas lights up the taken path
+          from the most recent call.
         </p>
       </header>
 

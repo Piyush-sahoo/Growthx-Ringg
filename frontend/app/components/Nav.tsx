@@ -27,7 +27,10 @@ export default function Nav() {
 
   return (
     <nav className="nav">
-      <span className="brand">FlowForge</span>
+      <Link href="/" className="brand">
+        <span className="mark" aria-hidden />
+        FlowForge
+      </Link>
       {LINKS.map((l) => (
         <Link
           key={l.href}
@@ -40,7 +43,8 @@ export default function Nav() {
       <span className="spacer" />
       {credits !== null && (
         <span className="credits">
-          Credits: <b>{credits}</b>
+          <span className="live-dot" aria-hidden />
+          Ringg credits <b>{credits}</b>
         </span>
       )}
     </nav>
