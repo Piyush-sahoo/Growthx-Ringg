@@ -43,4 +43,10 @@ def _fake_externals(request, monkeypatch):
     monkeypatch.setattr("app.tools.send_recap_video", _fake_video)
     # Used by follow-up scheduling so behavioral tests never place a real call.
     monkeypatch.setattr("app.ringg.ringg_client.place_outbound_call", _fake_call)
+
+    # Force tools "configured" so branch behavior is deterministic regardless of
+    # whether keys are present in the environment (e.g. CI has no .env).
+    monkeypatch.setattr("app.tools.email_configured", lambda: True)
+    monkeypatch.setattr("app.tools.whatsapp_configured", lambda: True)
+    monkeypatch.setattr("app.tools.video_configured", lambda: True)
     yield

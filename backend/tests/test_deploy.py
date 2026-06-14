@@ -22,8 +22,12 @@ def _fake_ringg(monkeypatch):
         assert kwargs["callback_url"].endswith("/webhooks/ringg")
         return {"ok": True}
 
+    async def fake_resolve_voice(language):
+        return "voice-test-id"
+
     monkeypatch.setattr(ringg_module.ringg_client, "create_agent", fake_create)
     monkeypatch.setattr(ringg_module.ringg_client, "subscribe_webhooks", fake_subscribe)
+    monkeypatch.setattr(ringg_module.ringg_client, "resolve_voice_id", fake_resolve_voice)
     return counters
 
 
