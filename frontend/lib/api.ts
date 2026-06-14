@@ -67,6 +67,41 @@ export async function getAgentVariables(agentId: string): Promise<string[]> {
   return r.variables ?? [];
 }
 
+export type ToolItem = Record<string, unknown> & {
+  name?: string;
+  type?: string | null;
+  enabled?: boolean | null;
+  url?: string | null;
+  does?: string;
+};
+
+export interface AgentTools {
+  pre_call: ToolItem[];
+  on_call: ToolItem[];
+  post_call: ToolItem[];
+  embedded: ToolItem[];
+  available: ToolItem[];
+  tool_call_logs: boolean;
+}
+
+export interface CatalogGroup {
+  group: string;
+  phase: string;
+  tools: ToolItem[];
+}
+
+export async function getAgentTools(agentId: string): Promise<AgentTools> {
+  return handle<AgentTools>(
+    await fetch(`${API_URL}/agents/${encodeURIComponent(agentId)}/tools`, { cache: "no-store" }),
+  );
+}
+
+export async function getToolCatalog(): Promise<Record<string, CatalogGroup>> {
+  return handle<Record<string, CatalogGroup>>(
+    await fetch(`${API_URL}/agents/tools/catalog`, { cache: "no-store" }),
+  );
+}
+
 export async function listRinggCalls(agentId?: string): Promise<RinggCall[]> {
   const q = agentId ? `?agent_id=${encodeURIComponent(agentId)}` : "";
   const r = await handle<{ calls: RinggCall[] }>(

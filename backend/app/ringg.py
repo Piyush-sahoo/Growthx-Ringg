@@ -164,6 +164,46 @@ class RinggClient:
                     return list(cv)
         return []
 
+    async def get_agent_tools(self, agent_id: str) -> dict:
+        """Read an agent's attached tools (pre/on/post-call, embedded, available)."""
+        url = f"{self._settings.ringg_base_url.rstrip('/')}/agent/{agent_id}"
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(url, headers=self._headers)
+        if resp.status_code >= 400:
+            raise RinggError(f"Ringg agent {resp.status_code}: {resp.text}")
+        data = resp.json()
+        agents = data.get("agents") or data.get("data", {}).get("agents")
+        vd = None
+        if isinstance(agents, dict):
+            vd = agents.get("version_details")
+        elif isinstance(agents, list) and agents:
+            vd = agents[0].get("version_details")
+        ver = next(iter(vd.values())) if isinstance(vd, dict) and vd else {}
+
+        def _pre(t: dict) -> dict:
+            return {"name": t.get("name"), "type": t.get("tool_type"),
+                    "url": (t.get("config") or {}).get("url")}
+
+        def _norm(t: dict) -> dict:
+            return {
+                "name": t.get("tool_name") or t.get("name"),
+                "type": t.get("tool_type"),
+                "enabled": t.get("is_enabled"),
+                "phase": t.get("tool_phase"),
+                "category": t.get("tool_category"),
+            }
+
+        analytics = ver.get("analytics_context") or {}
+        tcl = bool((analytics.get("client_analytics") or {}).get("tool_call_logs"))
+        return {
+            "pre_call": [_pre(t) for t in (ver.get("pre_call_tools") or [])],
+            "on_call": [_norm(t) for t in (ver.get("on_call_tools") or [])],
+            "post_call": [_norm(t) for t in (ver.get("post_call_tools") or [])],
+            "embedded": [_norm(t) for t in (ver.get("embedded_on_call_tools") or [])],
+            "available": [_norm(t) for t in (ver.get("available_tools") or [])],
+            "tool_call_logs": tcl,
+        }
+
     async def list_voices(self, language: str) -> list[dict]:
         url = f"{self._settings.ringg_base_url.rstrip('/')}/agent/voices"
         async with httpx.AsyncClient(timeout=30) as client:
